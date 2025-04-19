@@ -136,6 +136,7 @@
             return res.json();
           })
           .then(function (data) {
+            console.log(data);
             const list = document.querySelector("#MovieId");
             // 「選択してください。」を残して初期化
             list.innerHTML = "<option selected>選択してください。</option>";
