@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>YouTube Player</title>
+  </head>
+  <body>
+    <div id="player"></div>
+
+    <form id="searchForm">
+      <input type="search" id="ytSearch" value="TRiDENT" />
+      <button id="searchBtn">検索</button>
+    </form>
+    <nav>
+      <ul>
+        <li id="doplay">再生</li>
+        <li id="dostop">停止</li>
+        <li id="dopause">一時停止</li>
+        <li id="mute">ミュート</li>
+        <li id="do10sNext">10秒先へ</li>
+        <li id="do10sPrev">10秒戻る</li>
+        <li>
+          <select id="MovieId">
+            <option selected>選択してください。</option>
+            <option value="UP1zTP5qcfw">TRIDENT × GOMESS</option>
+            <option value="We__CnrYa9U">DISTINATION</option>
+            <option value="I6ld4ecEp7s">IMAGINATION</option>
+            <option value="azQVVhMUz58">Continue</option>
+          </select>
+        </li>
+        <li>
+          <form id="doSpeed">
+            <label><input type="radio" name="speed" value="0.25" />0.25</label>
+            <label><input type="radio" name="speed" value="0.5" />0.5</label>
+            <label><input type="radio" name="speed" value="1.0" checked />1</label>
+            <label><input type="radio" name="speed" value="1.5" />1.5</label>
+            <label><input type="radio" name="speed" value="2" />2</label>
+          </form>
+        </li>
+      </ul>
+      <label>
+        ボリューム
+        <input type="range" id="volume" min="0" max="100" value="50" />
+        <span id="volumeNum">50</span>
+      </label>
+    </nav>
+
+    <script>
+      // YouTube API 読み込み
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(tag);
+
+      let player;
+      let youtubeId = "UP1zTP5qcfw";
+
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player("player", {
+          height: "360",
+          width: "640",
+          videoId: youtubeId,
+          playerVars: { playsinline: 1, controls: 0 },
+          events: { onReady: initPlayer },
+        });
+      }
+
+      function initPlayer(event) {
+        const vol = 50;
+        player.setVolume(vol);
+        document.querySelector("#volume").value = vol;
+        document.querySelector("#volumeNum").textContent = vol;
+      }
+
+      // 操作用関数
+      const actions = {
+        doplay: function () {
+          player.playVideo();
+        },
+        dostop: function () {
+          player.stopVideo();
+        },
+        dopause: function () {
+          player.pauseVideo();
+        },
+        mute: function () {
+          const btn = document.querySelector("#mute");
+          if (player.isMuted()) {
+            player.unMute();
+            btn.textContent = "ミュート";
+          } else {
+            player.mute();
+            btn.textContent = "ミュート解除";
+          }
+        },
+        do10sPrev: function () {
+          const t = player.getCurrentTime();
+          player.seekTo(t - 10);
+        },
+        do10sNext: function () {
+          const t = player.getCurrentTime();
+          player.seekTo(t + 10);
+        },
+      };
+      for (const id in actions) {
+        document.querySelector("#" + id).addEventListener("click", actions[id]);
+      }
+
+      function handleVolumeChange(e) {
+        const v = e.target.value;
+        player.setVolume(v);
+        document.querySelector("#volumeNum").textContent = v;
+      }
+
+      // イベント登録
+      document.querySelector("#volume").addEventListener("input", handleVolumeChange);
+
+      // 動画切り替え
+      document.querySelector("#MovieId").addEventListener("change", function (e) {
+        youtubeId = e.target.value;
+        player.destroy();
+        onYouTubeIframeAPIReady();
+      });
+
+      // 再生速度変更
+      document.querySelector("#doSpeed").addEventListener("change", function (e) {
+        player.setPlaybackRate(parseFloat(e.target.value));
+      });
+
+      // 検索機能
+      function ytSearch(query) {
+        const key = "AIzaSyBD_YoEaykIzWycCqAR4O70B3xdH22JlRY";
+        const url = "https://www.googleapis.com/youtube/v3/search" + "?type=video&part=snippet&maxResults=10" + "&key=" + key + "&q=" + encodeURIComponent(query);
+        fetch(url)
+          .then(function (res) {
+            return res.json();
+          })
+          .then(function (data) {
+            const list = document.querySelector("#MovieId");
+            // 「選択してください。」を残して初期化
+            list.innerHTML = "<option selected>選択してください。</option>";
+            data.items.forEach(function (item) {
+              const opt = document.createElement("option");
+              opt.value = item.id.videoId;
+              opt.textContent = item.snippet.title;
+              list.appendChild(opt);
+            });
+          });
+      }
+
+      document.querySelector("#searchBtn").addEventListener("click", function (e) {
+        e.preventDefault();
+        const q = document.querySelector("#ytSearch").value;
+        ytSearch(q);
+      });
+    </script>
+  </body>
+</html>
